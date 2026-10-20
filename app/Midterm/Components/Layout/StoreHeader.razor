@@ -1,0 +1,89 @@
+@implements IDisposable
+@inject ICartService Cart
+@inject NavigationManager Navigation
+
+<header class="site-header">
+    <div class="header-top">
+        <a class="brand-wordmark" href="/" aria-label="FREQUENCY home">FREQUENCY</a>
+
+        <nav class="desktop-nav" aria-label="Main navigation">
+            <a href="/shop">Shop</a>
+            <a href="/shop?category=Headphones">Headphones</a>
+            <a href="/shop?category=Speakers">Speakers</a>
+            <a href="/shop?category=Studio">Studio</a>
+        </nav>
+
+        <div class="header-actions">
+            @if (_desktopSearchOpen)
+            {
+                <form class="desktop-search-form" @onsubmit="SubmitSearch" @onsubmit:preventDefault="true">
+                    <label class="sr-only" for="desktop-audio-search">Search audio</label>
+                    <input id="desktop-audio-search" type="search" placeholder="Search audio" @bind="_searchTerm" autofocus />
+                    <button type="submit" aria-label="Submit search">Go</button>
+                    <button type="button" class="search-close" aria-label="Close search" @onclick="CloseSearch">×</button>
+                </form>
+            }
+            else
+            {
+                <button type="button" class="desktop-search-trigger" @onclick="OpenSearch">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.8"></circle><path d="m13 13 4 4"></path></svg>
+                    <span>Search</span>
+                </button>
+            }
+
+            <a class="bag-link" href="/checkout" aria-label="Open bag, @Cart.ItemCount items">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.4 7h9.2l.8 9H4.6l.8-9Z"></path><path d="M7.5 7V5.2a2.5 2.5 0 0 1 5 0V7"></path></svg>
+                <span aria-live="polite">Bag (@Cart.ItemCount)</span>
+            </a>
+
+            <button class="mobile-menu-trigger" type="button" aria-expanded="@_mobileMenuOpen" aria-controls="mobile-navigation" @onclick="ToggleMenu">
+                @(_mobileMenuOpen ? "Close" : "Menu")
+            </button>
+        </div>
+    </div>
+
+    <div class="mobile-search-row">
+        <form class="mobile-search-form" @onsubmit="SubmitSearch" @onsubmit:preventDefault="true">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.8"></circle><path d="m13 13 4 4"></path></svg>
+            <label class="sr-only" for="mobile-audio-search">Search audio</label>
+            <input id="mobile-audio-search" type="search" placeholder="Search audio" @bind="_searchTerm" />
+            <button type="submit" aria-label="Search audio">Search</button>
+        </form>
+    </div>
+
+    @if (_mobileMenuOpen)
+    {
+        <nav class="mobile-navigation" id="mobile-navigation" aria-label="Mobile navigation">
+            <a href="/shop" @onclick="CloseMenu">Shop <span>All audio</span></a>
+            <a href="/shop?category=Headphones" @onclick="CloseMenu">Headphones</a>
+            <a href="/shop?category=Speakers" @onclick="CloseMenu">Speakers</a>
+            <a href="/shop?category=Studio" @onclick="CloseMenu">Studio</a>
+        </nav>
+    }
+</header>
+
+@code {
+    private bool _desktopSearchOpen;
+    private bool _mobileMenuOpen;
+    private string _searchTerm = string.Empty;
+
+    protected override void OnInitialized() => Cart.Changed += OnCartChanged;
+
+    private void OnCartChanged() => _ = InvokeAsync(StateHasChanged);
+    private void OpenSearch() => _desktopSearchOpen = true;
+    private void CloseSearch() => _desktopSearchOpen = false;
+    private void ToggleMenu() => _mobileMenuOpen = !_mobileMenuOpen;
+    private void CloseMenu() => _mobileMenuOpen = false;
+
+    private void SubmitSearch()
+    {
+        var query = _searchTerm.Trim();
+        Navigation.NavigateTo(string.IsNullOrEmpty(query)
+            ? "/shop"
+            : $"/shop?search={Uri.EscapeDataString(query)}");
+        _desktopSearchOpen = false;
+        _mobileMenuOpen = false;
+    }
+
+    public void Dispose() => Cart.Changed -= OnCartChanged;
+}
