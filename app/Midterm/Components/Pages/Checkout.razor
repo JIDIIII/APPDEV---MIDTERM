@@ -1,0 +1,194 @@
+@page "/checkout"
+@implements IDisposable
+@inject ICartService Cart
+@inject ICheckoutService CheckoutFlow
+
+<PageTitle>Bag and checkout — FREQUENCY</PageTitle>
+
+<div class="checkout-page page-container">
+    <header class="checkout-intro">
+        <p class="breadcrumb">Bag / Checkout</p>
+        <h1>Your next great listen.</h1>
+        <p>Review your bag and delivery details before placing your order.</p>
+    </header>
+
+    @if (_confirmation is not null)
+    {
+        <section class="order-confirmation" aria-labelledby="confirmation-title">
+            <div class="confirmation-mark" aria-hidden="true">✓</div>
+            <p class="eyebrow">Your reference</p>
+            <h2 id="confirmation-title">Thanks for listening.</h2>
+            <p>Your reference is <strong>@_confirmation.Reference</strong>.</p>
+            <p class="store-note">Keep this reference for your records.</p>
+            <a class="button button-primary" href="/shop">Continue shopping</a>
+        </section>
+    }
+    else if (Cart.ItemCount == 0)
+    {
+        <section class="empty-bag" aria-labelledby="empty-bag-title">
+            <p class="eyebrow">Your bag is empty</p>
+            <h2 id="empty-bag-title">A little room for something good.</h2>
+            <p>Explore the collection and find a sound that feels like yours.</p>
+            <a class="button button-primary" href="/shop">Continue shopping</a>
+        </section>
+    }
+    else
+    {
+        <EditForm Model="_draft" OnValidSubmit="PlaceOrder" class="checkout-layout">
+            <DataAnnotationsValidator />
+
+            <div class="checkout-details">
+                <section class="bag-items" aria-labelledby="bag-heading">
+                    <div class="section-heading-row">
+                        <h2 id="bag-heading">In your bag</h2>
+                        <span>@Cart.ItemCount items</span>
+                    </div>
+
+                    <div class="cart-lines">
+                        @foreach (var item in Cart.Items)
+                        {
+                            <article class="cart-line" @key="@(item.Product.Id + "-" + item.Variant.Id)">
+                                <img src="@item.Product.ImageUrl" alt="@item.Product.ImageAlt" loading="lazy" />
+                                <div class="cart-line-info">
+                                    <h3>@item.Product.Name</h3>
+                                    <p>@item.Variant.Name · @item.Product.Category</p>
+                                    <span>@CurrencyFormatter.PhilippinePeso(item.Product.Price) each</span>
+                                    <div class="cart-line-controls">
+                                        <div class="quantity-control" aria-label="Quantity for @item.Product.Name">
+                                            <button type="button" aria-label="Decrease @item.Product.Name quantity" disabled="@(item.Quantity <= 1)"
+                                                    @onclick="() => ChangeQuantity(item, item.Quantity - 1)">−</button>
+                                            <span aria-live="polite">@item.Quantity</span>
+                                            <button type="button" aria-label="Increase @item.Product.Name quantity"
+                                                    @onclick="() => ChangeQuantity(item, item.Quantity + 1)">+</button>
+                                        </div>
+                                        <button type="button" class="remove-link" @onclick="() => Cart.Remove(item.Product.Id, item.Variant.Id)">Remove</button>
+                                    </div>
+                                </div>
+                                <strong class="cart-line-total">@CurrencyFormatter.PhilippinePeso(item.LineTotal)</strong>
+                            </article>
+                        }
+                    </div>
+
+                    <a class="text-link continue-shopping-link" href="/shop">Continue shopping <span aria-hidden="true">→</span></a>
+                </section>
+
+                <section class="customer-details" aria-labelledby="details-heading">
+                    <h2 id="details-heading">Your details</h2>
+                    <div class="form-field">
+                        <label for="checkout-email">Email address</label>
+                        <InputText id="checkout-email" class="checkout-input" type="email" autocomplete="email" @bind-Value="_draft.Email" />
+                        <ValidationMessage For="@(() => _draft.Email)" />
+                    </div>
+                    <div class="form-grid form-grid-two">
+                        <div class="form-field">
+                            <label for="checkout-name">Full name</label>
+                            <InputText id="checkout-name" class="checkout-input" autocomplete="name" @bind-Value="_draft.FullName" />
+                            <ValidationMessage For="@(() => _draft.FullName)" />
+                        </div>
+                        <div class="form-field">
+                            <label for="checkout-phone">Phone number</label>
+                            <InputText id="checkout-phone" class="checkout-input" type="tel" autocomplete="tel" @bind-Value="_draft.Phone" />
+                            <ValidationMessage For="@(() => _draft.Phone)" />
+                        </div>
+                    </div>
+                </section>
+
+                <section class="delivery-section" aria-labelledby="delivery-heading">
+                    <h2 id="delivery-heading">Delivery</h2>
+                    <fieldset class="delivery-options">
+                        <legend class="sr-only">Choose a delivery option</legend>
+                        @foreach (var option in CheckoutFlow.DeliveryOptions)
+                        {
+                            <label class="delivery-option @(SelectedDelivery.Id == option.Id ? "is-selected" : string.Empty)">
+                                <input type="radio" name="delivery" value="@option.Id" checked="@(SelectedDelivery.Id == option.Id)"
+                                       @onchange="() => SelectDelivery(option.Id)" />
+                                <span class="delivery-option-copy">
+                                    <strong>@option.Name · @(option.Fee == 0m ? "Free" : CurrencyFormatter.PhilippinePeso(option.Fee))</strong>
+                                    <small>@option.Description</small>
+                                </span>
+                            </label>
+                        }
+                    </fieldset>
+                </section>
+
+                <section class="address-section" aria-labelledby="address-heading">
+                    <h3 id="address-heading">Delivery address</h3>
+                    <div class="form-field">
+                        <label for="checkout-street">Street address</label>
+                        <InputText id="checkout-street" class="checkout-input" autocomplete="street-address" @bind-Value="_draft.StreetAddress" />
+                        <ValidationMessage For="@(() => _draft.StreetAddress)" />
+                    </div>
+                    <div class="form-grid city-postal-grid">
+                        <div class="form-field">
+                            <label for="checkout-city">City</label>
+                            <InputText id="checkout-city" class="checkout-input" autocomplete="address-level2" @bind-Value="_draft.City" />
+                            <ValidationMessage For="@(() => _draft.City)" />
+                        </div>
+                        <div class="form-field">
+                            <label for="checkout-postal">Postal code</label>
+                            <InputText id="checkout-postal" class="checkout-input" autocomplete="postal-code" inputmode="numeric" @bind-Value="_draft.PostalCode" />
+                            <ValidationMessage For="@(() => _draft.PostalCode)" />
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="order-panel" aria-label="Payment and order summary">
+                <section class="payment-section" aria-labelledby="payment-heading">
+                    <h2 id="payment-heading">Payment</h2>
+                    <div class="payment-choice">
+                        <input type="radio" name="payment" checked aria-label="Payment options selected" />
+                        <div><strong>Payment options</strong><p>No card details are needed at this step.</p></div>
+                    </div>
+                </section>
+
+                <section class="order-summary" aria-labelledby="summary-heading">
+                    <h2 id="summary-heading">Order summary</h2>
+                    <dl class="summary-lines">
+                        <div><dt>Subtotal · @Summary.ItemCount items</dt><dd>@CurrencyFormatter.PhilippinePeso(Summary.Subtotal)</dd></div>
+                        <div><dt>@SelectedDelivery.Name delivery</dt><dd>@(Summary.DeliveryFee == 0m ? "Free" : CurrencyFormatter.PhilippinePeso(Summary.DeliveryFee))</dd></div>
+                    </dl>
+                    <div class="summary-total"><span>Total</span><strong>@CurrencyFormatter.PhilippinePeso(Summary.Total)</strong></div>
+                    <p class="tax-note">Prices shown in Philippine pesos (PHP).</p>
+                    <button type="submit" class="button button-primary button-wide">Place order</button>
+                </section>
+
+                <section class="before-you-order" aria-labelledby="order-note-title">
+                    <h3 id="order-note-title">A note before you order</h3>
+                    <p>Standard delivery from ₱150, complimentary Makati studio pickup, and easy returns within 14 days.</p>
+                    <a class="text-link" href="mailto:hello@frequency.ph">Need help? Contact us <span aria-hidden="true">→</span></a>
+                </section>
+            </aside>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private readonly CheckoutDraft _draft = new();
+    private string _selectedDeliveryId = "standard";
+    private OrderConfirmation? _confirmation;
+
+    private DeliveryOption SelectedDelivery => CheckoutFlow.DeliveryOptions.First(option => option.Id == _selectedDeliveryId);
+    private OrderSummary Summary => CheckoutFlow.CreateSummary(Cart, SelectedDelivery);
+
+    protected override void OnInitialized() => Cart.Changed += OnCartChanged;
+
+    private void OnCartChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void SelectDelivery(string deliveryId)
+    {
+        if (CheckoutFlow.DeliveryOptions.Any(option => option.Id == deliveryId))
+            _selectedDeliveryId = deliveryId;
+    }
+
+    private void ChangeQuantity(CartLine item, int quantity) =>
+        Cart.SetQuantity(item.Product.Id, item.Variant.Id, quantity);
+
+    private void PlaceOrder()
+    {
+        _confirmation = CheckoutFlow.CreateConfirmation();
+        Cart.Clear();
+    }
+
+    public void Dispose() => Cart.Changed -= OnCartChanged;
+}

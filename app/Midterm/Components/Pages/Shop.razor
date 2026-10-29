@@ -1,0 +1,255 @@
+@page "/shop"
+@inject IProductCatalog Catalog
+@inject ICartService Cart
+@inject IJSRuntime JS
+
+<PageTitle>Shop audio — FREQUENCY</PageTitle>
+
+<div class="shop-page page-container">
+    <header class="shop-intro">
+        <p class="eyebrow">The FREQUENCY collection</p>
+        <h1>Find your sound.</h1>
+        <p>Nine considered essentials. A world of better listening.</p>
+    </header>
+
+    <nav class="filter-list" aria-label="Filter products by category">
+        @foreach (var category in Categories)
+        {
+            <button type="button" class="filter-chip @(SelectedCategory == category ? "is-active" : string.Empty)"
+                    aria-pressed="@(SelectedCategory == category)" @onclick="() => SetCategory(category)">@category</button>
+        }
+    </nav>
+
+    <div class="catalog-toolbar">
+        <p aria-live="polite">@VisibleProducts.Count() products</p>
+        <label class="sort-control">
+            <span>Sort:</span>
+            <select aria-label="Sort products" @bind="_sortOrder">
+                <option value="featured">Featured</option>
+                <option value="name">Name</option>
+                <option value="price-low">Price: low to high</option>
+                <option value="price-high">Price: high to low</option>
+            </select>
+            <span aria-hidden="true">⌄</span>
+        </label>
+    </div>
+    <p class="sr-only" role="status" aria-live="polite">@_bagMessage</p>
+
+    @if (VisibleProducts.Any())
+    {
+        <section class="product-grid" aria-label="Audio products">
+            @foreach (var product in VisibleProducts)
+            {
+                var selectedVariant = GetSelectedVariant(product);
+                <article class="product-card" @key="product.Id">
+                    <button type="button" class="product-photo" aria-label="View @product.Name details" @onclick="() => OpenQuickView(product)">
+                        <img src="@product.ImageUrl" alt="@product.ImageAlt" loading="lazy" />
+                    </button>
+                    <div class="product-details">
+                        <div class="product-title-row">
+                            <h2>@product.Name</h2>
+                            <span class="product-category">@product.Category</span>
+                        </div>
+                        <p class="product-description">@product.Description</p>
+                        <p class="product-price">@CurrencyFormatter.PhilippinePeso(product.Price)</p>
+                        <div class="finish-options" aria-label="Available finishes for @product.Name">
+                            @foreach (var variant in product.Variants)
+                            {
+                                var isSelected = selectedVariant.Id == variant.Id;
+                                <button type="button" class="finish-swatch @(isSelected ? "is-selected" : string.Empty)"
+                                        style="--swatch-color: @variant.ColorHex"
+                                        aria-label="@variant.Name finish" aria-pressed="@isSelected" title="@variant.Name"
+                                        @onclick="() => SelectVariant(product, variant)">
+                                    <span class="sr-only">@variant.Name</span>
+                                </button>
+                            }
+                        </div>
+                        @if (product.RequiresQuickView)
+                        {
+                            <button type="button" class="text-link product-action" @onclick="() => OpenQuickView(product)">View details <span aria-hidden="true">→</span></button>
+                        }
+                        else
+                        {
+                            <button type="button" class="text-link product-action" @onclick="() => AddToBag(product)">Buy <span aria-hidden="true">→</span></button>
+                        }
+                    </div>
+                </article>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="empty-results" aria-live="polite">
+            <h2>No audio found.</h2>
+            <p>Try another search or browse the full collection.</p>
+            <button type="button" class="text-link" @onclick="ResetFilters">Show all audio <span aria-hidden="true">→</span></button>
+        </section>
+    }
+
+    <section class="buying-help" id="buying-help">
+        <div>
+            <h2>Not sure where to start?</h2>
+            <p>Tell us how you listen. We’ll help you find your fit.</p>
+            <p class="store-note">Thoughtfully chosen audio, with friendly help whenever you need it.</p>
+        </div>
+        <a class="text-link" href="mailto:hello@frequency.ph?subject=Help%20me%20find%20my%20sound">Get buying help <span aria-hidden="true">→</span></a>
+    </section>
+</div>
+
+@if (_quickViewProduct is not null)
+{
+    var product = _quickViewProduct;
+    var variant = GetSelectedVariant(product);
+    <dialog class="quick-view-modal" @ref="_quickViewDialog" aria-labelledby="quick-view-title" @onclose="HandleDialogClosed">
+        <section class="quick-view-dialog" @onclick:stopPropagation="true">
+            <button type="button" class="dialog-close" aria-label="Close product details" autofocus @onclick="CloseQuickView">×</button>
+            <div class="quick-view-image"><img src="@product.ImageUrl" alt="@product.ImageAlt" /></div>
+            <div class="quick-view-copy">
+                <p class="eyebrow">@product.Category</p>
+                <h2 id="quick-view-title">@product.Name</h2>
+                <p>@product.Description. Considered detail, thoughtful materials, and a sound that fits your space.</p>
+                <p class="quick-view-price">@CurrencyFormatter.PhilippinePeso(product.Price)</p>
+                <fieldset class="quick-view-finishes">
+                    <legend>Finish: <strong>@variant.Name</strong></legend>
+                    <div class="finish-options">
+                        @foreach (var option in product.Variants)
+                        {
+                            var isSelected = variant.Id == option.Id;
+                            <button type="button" class="finish-swatch @(isSelected ? "is-selected" : string.Empty)"
+                                    style="--swatch-color: @option.ColorHex" aria-label="@option.Name finish"
+                                    aria-pressed="@isSelected" title="@option.Name" @onclick="() => SelectVariant(product, option)">
+                                <span class="sr-only">@option.Name</span>
+                            </button>
+                        }
+                    </div>
+                </fieldset>
+                <div class="quick-view-quantity">
+                    <span>Quantity</span>
+                    <div class="quantity-control" aria-label="Quantity">
+                        <button type="button" aria-label="Decrease quantity" disabled="@(_quickViewQuantity <= 1)" @onclick="DecreaseQuickViewQuantity">−</button>
+                        <span aria-live="polite">@_quickViewQuantity</span>
+                        <button type="button" aria-label="Increase quantity" @onclick="IncreaseQuickViewQuantity">+</button>
+                    </div>
+                </div>
+                <button type="button" class="button button-primary button-wide" @onclick="AddQuickViewToBag">Add to bag · @CurrencyFormatter.PhilippinePeso(product.Price * _quickViewQuantity)</button>
+            </div>
+        </section>
+    </dialog>
+}
+
+@code {
+    private static readonly string[] Categories = ["All audio", "Headphones", "Earbuds", "Speakers", "Studio", "Turntables", "Accessories"];
+    private readonly Dictionary<string, string> _selectedVariants = new();
+    private string SelectedCategory = "All audio";
+    private string _sortOrder = "featured";
+    private string _bagMessage = string.Empty;
+    private int _quickViewQuantity = 1;
+    private Product? _quickViewProduct;
+    private ElementReference _quickViewDialog;
+    private bool _dialogIsOpen;
+
+    [SupplyParameterFromQuery(Name = "category")]
+    public string? CategoryQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "search")]
+    public string? SearchQuery { get; set; }
+
+    private IEnumerable<Product> VisibleProducts
+    {
+        get
+        {
+            IEnumerable<Product> products = Catalog.Products;
+            if (SelectedCategory != "All audio")
+                products = products.Where(product => product.Category.Equals(SelectedCategory, StringComparison.OrdinalIgnoreCase));
+
+            var query = SearchQuery?.Trim();
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                products = products.Where(product =>
+                    product.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    product.Category.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    product.Description.Contains(query, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return _sortOrder switch
+            {
+                "name" => products.OrderBy(product => product.Name),
+                "price-low" => products.OrderBy(product => product.Price),
+                "price-high" => products.OrderByDescending(product => product.Price),
+                _ => products
+            };
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        SelectedCategory = Categories.FirstOrDefault(category =>
+            category.Equals(CategoryQuery, StringComparison.OrdinalIgnoreCase)) ?? "All audio";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_quickViewProduct is not null && !_dialogIsOpen)
+        {
+            await JS.InvokeVoidAsync("frequencyDialogs.open", _quickViewDialog);
+            _dialogIsOpen = true;
+        }
+        else if (_quickViewProduct is null && _dialogIsOpen)
+        {
+            await JS.InvokeVoidAsync("frequencyDialogs.close", _quickViewDialog);
+            _dialogIsOpen = false;
+        }
+    }
+
+    private ProductVariant GetSelectedVariant(Product product)
+    {
+        var selectedId = _selectedVariants.GetValueOrDefault(product.Id);
+        return product.Variants.FirstOrDefault(variant => variant.Id == selectedId) ?? product.Variants[0];
+    }
+
+    private void SetCategory(string category) => SelectedCategory = category;
+
+    private void SelectVariant(Product product, ProductVariant variant) => _selectedVariants[product.Id] = variant.Id;
+
+    private void AddToBag(Product product)
+    {
+        Cart.Add(product, GetSelectedVariant(product));
+        _bagMessage = $"{product.Name} added to your bag.";
+    }
+
+    private void OpenQuickView(Product product)
+    {
+        _quickViewProduct = product;
+        _quickViewQuantity = 1;
+        _bagMessage = string.Empty;
+    }
+
+    private void CloseQuickView() => _quickViewProduct = null;
+
+    private void HandleDialogClosed()
+    {
+        _dialogIsOpen = false;
+        if (_quickViewProduct is not null)
+        {
+            _quickViewProduct = null;
+            _ = InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void DecreaseQuickViewQuantity() => _quickViewQuantity = Math.Max(1, _quickViewQuantity - 1);
+    private void IncreaseQuickViewQuantity() => _quickViewQuantity = checked(_quickViewQuantity + 1);
+
+    private void AddQuickViewToBag()
+    {
+        if (_quickViewProduct is null) return;
+        Cart.Add(_quickViewProduct, GetSelectedVariant(_quickViewProduct), _quickViewQuantity);
+        _bagMessage = $"{_quickViewProduct.Name} added to your bag.";
+        CloseQuickView();
+    }
+
+    private void ResetFilters()
+    {
+        SelectedCategory = "All audio";
+        SearchQuery = null;
+    }
+}

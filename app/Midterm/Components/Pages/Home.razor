@@ -1,0 +1,146 @@
+@page "/"
+@inject IProductCatalog Catalog
+@inject ICartService Cart
+
+<PageTitle>FREQUENCY — Good sound. Carefully chosen.</PageTitle>
+
+<section class="home-hero" aria-labelledby="home-title">
+    <div class="hero-copy">
+        <p class="eyebrow">A better way to listen</p>
+        <h1 id="home-title">Hear every<br />detail.</h1>
+        <p class="hero-description">Considered audio for the music, moments, and spaces that matter.</p>
+        <div class="hero-actions">
+            <a class="button button-primary" href="/shop?category=Headphones">Shop headphones</a>
+            <a class="text-link" href="/shop">Explore all audio <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+    <figure class="hero-visual">
+        <img src="images/products/horizon-one.png" alt="Horizon One over-ear headphones in graphite" />
+        <figcaption><span>Horizon One · Graphite</span><span>01 / 03</span></figcaption>
+    </figure>
+</section>
+
+<nav class="category-shortcuts" aria-label="Shop by category">
+    <a href="/shop?category=Headphones">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1M4 13h3v6H5a1 1 0 0 1-1-1v-5Zm16 0h-3v6h2a1 1 0 0 0 1-1v-5Z" /></svg>
+        <span>Headphones</span>
+    </a>
+    <a href="/shop?category=Earbuds">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4a4 4 0 0 0-4 4v2a3 3 0 0 0 3 3h1V8h4V7a3 3 0 0 0-4-3Zm8 0a4 4 0 0 1 4 4v2a3 3 0 0 1-3 3h-1V8h-4V7a3 3 0 0 1 4-3ZM7 13v3a2 2 0 0 0 2 2h1v2H9a4 4 0 0 1-4-4v-3m12 0v3a2 2 0 0 1-2 2h-1v2h1a4 4 0 0 0 4-4v-3" /></svg>
+        <span>Earbuds</span>
+    </a>
+    <a href="/shop?category=Speakers">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2" /><circle cx="12" cy="10" r="3" /><circle cx="12" cy="17" r="1" /></svg>
+        <span>Speakers</span>
+    </a>
+    <a href="/shop?category=Studio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a4 4 0 0 0 4-4V5a4 4 0 0 0-8 0v5a4 4 0 0 0 4 4Zm-7-4a7 7 0 0 0 14 0m-7 7v4m-4 0h8" /></svg>
+        <span>Studio</span>
+    </a>
+    <a href="/shop?category=Turntables">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><circle cx="12" cy="12" r="1" /><path d="m16 8 2 2" /></svg>
+        <span>Turntables</span>
+    </a>
+    <a href="/shop?category=Accessories">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4v5a3 3 0 0 0 6 0V4m-3 7v9m6-16v7a3 3 0 0 0 6 0V4m-3 7v9" /></svg>
+        <span>Accessories</span>
+    </a>
+</nav>
+
+<section class="feature-band" aria-labelledby="horizon-feature-title">
+    <div class="feature-image">
+        <img src="images/products/horizon-one.png" alt="Horizon One headphones ready for a quiet listening session" loading="lazy" />
+    </div>
+    <div class="feature-copy">
+        <p class="eyebrow">Horizon One</p>
+        <h2 id="horizon-feature-title">Less noise.<br />More music.</h2>
+        <p>Immersive detail, adaptive noise cancellation, and comfort that stays with you.</p>
+        <p class="starting-price">From @CurrencyFormatter.PhilippinePeso(HorizonOne.Price)</p>
+        <div class="feature-actions">
+            <button class="button button-primary" type="button" @onclick="AddHorizonOne">Buy</button>
+            <a class="text-link" href="/shop?search=Horizon%20One">Discover Horizon One <span aria-hidden="true">→</span></a>
+        </div>
+        <span class="sr-only" aria-live="polite">@_bagMessage</span>
+    </div>
+</section>
+
+<section class="roam-campaign" aria-labelledby="roam-title">
+    <div class="roam-copy">
+        <p class="eyebrow">Roam S</p>
+        <h2 id="roam-title">Big sound.<br />No fixed address.</h2>
+        <p>Room-filling sound. All-day energy. A little speaker with a wider world in mind.</p>
+        <p class="starting-price">@CurrencyFormatter.PhilippinePeso(RoamS.Price)</p>
+        <a class="text-link" href="/shop?search=Roam%20S">Discover Roam S <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="roam-image">
+        <img src="images/products/roam-s.png" alt="Roam S portable wireless speaker in charcoal" loading="lazy" />
+    </div>
+</section>
+
+<section class="listening-editorial" aria-labelledby="listening-title">
+    <div class="editorial-heading">
+        <h2 id="listening-title">Make room for listening.</h2>
+        <p>A slower pace. A deeper connection.</p>
+    </div>
+    <div class="editorial-grid">
+        <article class="editorial-card editorial-card-large">
+            <a href="/shop?search=Form%20Two" class="editorial-image" aria-label="Explore Form Two speakers">
+                <img src="images/products/form-two.png" alt="Form Two walnut speakers in a quiet living room" loading="lazy" />
+            </a>
+            <h3>A fuller sound. A quieter space.</h3>
+            <p>Form Two brings rich, balanced stereo to the place you call home.</p>
+            <div class="editorial-meta"><span>@CurrencyFormatter.PhilippinePeso(FormTwo.Price)</span><a class="text-link" href="/shop?search=Form%20Two">Explore Form Two <span aria-hidden="true">→</span></a></div>
+        </article>
+        <article class="editorial-card editorial-card-small">
+            <a href="/shop?search=Orbit%20Deck" class="editorial-image" aria-label="Explore Orbit Deck turntable">
+                <img src="images/products/orbit-deck.png" alt="Orbit Deck walnut turntable and vinyl record" loading="lazy" />
+            </a>
+            <h3>An everyday ritual.</h3>
+            <p>Drop the needle. Stay a little longer. Meet Orbit Deck.</p>
+            <div class="editorial-meta"><span>@CurrencyFormatter.PhilippinePeso(OrbitDeck.Price)</span><a class="text-link" href="/shop?category=Turntables">Explore turntables <span aria-hidden="true">→</span></a></div>
+        </article>
+    </div>
+</section>
+
+<section class="benefit-strip" aria-labelledby="store-benefits-title">
+    <h2 id="store-benefits-title" class="eyebrow">Shopping with FREQUENCY</h2>
+    <div class="benefit-grid">
+        <article class="benefit-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" /><circle cx="7" cy="18" r="2" /><circle cx="18" cy="18" r="2" /></svg>
+            <div><h3>Delivered with care</h3><p>Standard delivery from ₱150.</p></div>
+        </article>
+        <article class="benefit-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" /><path d="m4 7.5 8 4.5 8-4.5M12 12v9" /></svg>
+            <div><h3>Time to find your sound</h3><p>Easy returns within 14 days.</p></div>
+        </article>
+        <article class="benefit-item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8 8 0 0 1-8 8 8.7 8.7 0 0 1-4-.9L4 20l1.4-3.4A8 8 0 1 1 20 11.5Z" /></svg>
+            <div><h3>A little listening advice</h3><p>Personal help from our listening team.</p></div>
+        </article>
+    </div>
+</section>
+
+@code {
+    private string _bagMessage = string.Empty;
+    private Product HorizonOne = default!;
+    private Product RoamS = default!;
+    private Product FormTwo = default!;
+    private Product OrbitDeck = default!;
+
+    protected override void OnInitialized()
+    {
+        HorizonOne = FindProduct("horizon-one");
+        RoamS = FindProduct("roam-s");
+        FormTwo = FindProduct("form-two");
+        OrbitDeck = FindProduct("orbit-deck");
+    }
+
+    private Product FindProduct(string id) => Catalog.FindById(id)
+        ?? throw new InvalidOperationException($"Required home product '{id}' is missing from the catalog.");
+
+    private void AddHorizonOne()
+    {
+        Cart.Add(HorizonOne, HorizonOne.Variants[0]);
+        _bagMessage = $"{HorizonOne.Name} added to your bag.";
+    }
+}
